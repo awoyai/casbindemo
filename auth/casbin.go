@@ -12,7 +12,7 @@ type Casbin struct {
 }
 
 func NewCasbin(dns string) *Casbin {
-	a, err := xormadapter.NewAdapterWithTableName("mysql", dns, "casbin", "db_", true)
+	a, err := xormadapter.NewAdapterWithTableName("mysql", dns, "casbin", "tb_", true)
 	if err != nil {
 		panic("NewAdapter err: " + err.Error())
 	}
@@ -48,18 +48,31 @@ func (c *Casbin) CheckPermission(sub, obj, act string) (bool, error) {
 }
 
 func (c *Casbin) AddRole(role string) error {
-	_, err := c.e.AddRoleForUser("admin", role)
+	_, err := c.e.AddRoleForUser("root", role)
+	c.e.SavePolicy()
+	return err
+}
+
+func (c *Casbin) AddUser(roles []string, user string) error {
+	_, err := c.e.AddRolesForUser(user, roles, "domain")
 	c.e.SavePolicy()
 	return err
 }
 
 func (c *Casbin) AddPolicies(rules [][]string) error {
 	_, err := c.e.AddPolicies(rules)
-	c.e.GetAllRoles()
 	c.e.SavePolicy()
 	return err
 }
 
 func (c *Casbin) GetRoles() []string {
 	return c.e.GetAllRoles()
+}
+
+func (c *Casbin) GetPolicies() [][]string {
+	return c.e.GetPolicy()
+}
+
+func (c *Casbin) GetUsers() []string {
+	return c.e.GetAllUsersByDomain("")
 }
