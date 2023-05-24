@@ -7,6 +7,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+const (
+	DefualtDomain    = "main"
+	DefaultRole      = "member"
+	DefaultSuperRole = "root"
+)
+
 type Casbin struct {
 	e *casbin.Enforcer
 }
@@ -48,13 +54,30 @@ func (c *Casbin) CheckPermission(sub, obj, act string) (bool, error) {
 }
 
 func (c *Casbin) AddRole(role string) error {
-	_, err := c.e.AddRoleForUser("root", role)
+	_, err := c.e.AddRoleForUser(DefaultSuperRole, role)
 	c.e.SavePolicy()
 	return err
 }
 
-func (c *Casbin) AddUser(roles []string, user string) error {
-	_, err := c.e.AddRolesForUser(user, roles, "domain")
+func (c *Casbin) DelRole(role string) error {
+	_, err := c.e.DeleteRole(role)
+	return err
+}
+
+func (c *Casbin) AddUser(user string) error {
+	_, err := c.e.AddRoleForUser(user, DefaultRole, DefualtDomain)
+	c.e.SavePolicy()
+	return err
+}
+
+func (c *Casbin) UserAddRole(user, role string) error {
+	_, err := c.e.AddRoleForUser(user, role, DefualtDomain)
+	c.e.SavePolicy()
+	return err
+}
+
+func (c *Casbin) UserDelRole(user, role string) error {
+	_, err := c.e.DeleteRoleForUser(user, role, DefualtDomain)
 	c.e.SavePolicy()
 	return err
 }
@@ -74,5 +97,11 @@ func (c *Casbin) GetPolicies() [][]string {
 }
 
 func (c *Casbin) GetUsers() []string {
-	return c.e.GetAllUsersByDomain("")
+	users, _ := c.e.GetUsersForRole("member")
+	return users
+}
+
+func (c *Casbin) DelUser(username string) error {
+	_, err := c.e.DeleteUser(username)
+	return err
 }
